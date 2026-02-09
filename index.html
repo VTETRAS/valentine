@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Valentine?</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #ffe6eb;
+      padding-top: 50px;
+    }
+
+    img {
+      width: 300px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      color: #d6336c;
+    }
+
+    .buttons {
+      margin-top: 30px;
+      position: relative;
+      height: 200px;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #yes {
+      background-color: #ff4d6d;
+      color: white;
+    }
+
+    #no {
+      background-color: #adb5bd;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+
+  <img src="your-photo.jpg" alt="Us together" />
+  <h1>Will you be my Valentine? 💖</h1>
+
+  <div class="buttons">
+    <button id="yes" onclick="yesClicked()">Yes</button>
+    <button id="no">No</button>
+  </div>
+
+  <script>
+    const noButton = document.getElementById("no");
+
+    noButton.addEventListener("mouseover", () => {
+      const x = Math.random() * 300 - 150;
+      const y = Math.random() * 150 - 75;
+
+      noButton.style.transform = `translate(${x}px, ${y}px)`;
+    });
+
+    function yesClicked() {
+      document.body.innerHTML = `
+        <h1>💘 I knew you'd choose yes 💘</h1>
+        <p>You’re stuck with me now 😌</p>
+      `;
+    }
+  </script>
+
+</body>
+</html>
