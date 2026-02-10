@@ -43,6 +43,9 @@
     #no {
       background-color: #adb5bd;
       position: absolute;
+      left: 220px;
+      top: 60px;
+      will-change: transform;
     }
   </style>
 </head>
@@ -60,36 +63,114 @@
   const noButton = document.getElementById("no");
   const buttonsBox = document.querySelector(".buttons");
 
-  function moveNoButton() {
-    // Keep the button within the buttons area so it doesn't fly off-screen
-    const boxRect = buttonsBox.getBoundingClientRect();
-    const btnRect = noButton.getBoundingClientRect();
+  // Current position (px) and target position (px)
+  let pos = { x: 220, y: 60 };
+  let target = { x: 220, y: 60 };
 
-    const maxX = boxRect.width - btnRect.width;
-    const maxY = boxRect.height - btnRect.height;
+  // Cursor/finger position relative to the buttons box
+  let pointer = { x: null, y: null };
 
-    const x = Math.random() * maxX;
-    const y = Math.random() * maxY;
+  // How close before it runs away (bigger = more sensitive)
+  const dangerRadius = 90;
 
-    noButton.style.left = `${x}px`;
-    noButton.style.top = `${y}px`;
-    noButton.style.transform = "none"; // we're using left/top now
+  // How fast it "runs" (0.08–0.2 feels nice)
+  const runSpeed = 0.12;
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
   }
 
-  // Desktop: when mouse goes over the button, move it
-  noButton.addEventListener("mouseover", moveNoButton);
+  function getBoxMetrics() {
+    const boxRect = buttonsBox.getBoundingClientRect();
+    const btnRect = noButton.getBoundingClientRect();
+    return {
+      boxRect,
+      maxX: boxRect.width - btnRect.width,
+      maxY: boxRect.height - btnRect.height
+    };
+  }
 
-  // Mobile: when user tries to tap the button, move it away
+  function setPointerFromClient(clientX, clientY) {
+    const { boxRect } = getBoxMetrics();
+    pointer.x = clientX - boxRect.left;
+    pointer.y = clientY - boxRect.top;
+  }
+
+  function distance(ax, ay, bx, by) {
+    const dx = ax - bx;
+    const dy = ay - by;
+    return Math.hypot(dx, dy);
+  }
+
+  function pickNewTargetAwayFromPointer() {
+    const { maxX, maxY } = getBoxMetrics();
+
+    // If we don't have a pointer yet, do nothing
+    if (pointer.x === null || pointer.y === null) return;
+
+    // Vector from pointer -> button
+    const dx = pos.x - pointer.x;
+    const dy = pos.y - pointer.y;
+    const len = Math.hypot(dx, dy) || 1;
+
+    // Step away in that direction (+ a little randomness)
+    const step = 140 + Math.random() * 120; // how far it tries to flee
+    const jitterX = (Math.random() - 0.5) * 60;
+    const jitterY = (Math.random() - 0.5) * 60;
+
+    let newX = pos.x + (dx / len) * step + jitterX;
+    let newY = pos.y + (dy / len) * step + jitterY;
+
+    // Keep it inside the box
+    newX = clamp(newX, 0, maxX);
+    newY = clamp(newY, 0, maxY);
+
+    target.x = newX;
+    target.y = newY;
+  }
+
+  function animate() {
+    // If pointer is close, choose a target away from it
+    if (pointer.x !== null && pointer.y !== null) {
+      const d = distance(pos.x, pos.y, pointer.x, pointer.y);
+      if (d < dangerRadius) {
+        pickNewTargetAwayFromPointer();
+      }
+    }
+
+    // Ease current position toward target (smooth running)
+    pos.x += (target.x - pos.x) * runSpeed;
+    pos.y += (target.y - pos.y) * runSpeed;
+
+    // Apply movement smoothly
+    noButton.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+
+    requestAnimationFrame(animate);
+  }
+
+  // Desktop: track mouse over the button area
+  buttonsBox.addEventListener("mousemove", (e) => {
+    setPointerFromClient(e.clientX, e.clientY);
+  });
+
+  // Mobile: track finger movement over the button area
+  buttonsBox.addEventListener("touchmove", (e) => {
+    const t = e.touches[0];
+    setPointerFromClient(t.clientX, t.clientY);
+  }, { passive: true });
+
+  // Mobile: if they try to tap "No", force it to flee immediately
   noButton.addEventListener("touchstart", (e) => {
-    e.preventDefault(); // prevents the tap from "clicking" the button
-    moveNoButton();
+    e.preventDefault();
+    const t = e.touches[0];
+    setPointerFromClient(t.clientX, t.clientY);
+    pickNewTargetAwayFromPointer();
   }, { passive: false });
 
-  // Mobile: if their finger moves near/over it, keep dodging
-  noButton.addEventListener("touchmove", (e) => {
-    e.preventDefault();
-    moveNoButton();
-  }, { passive: false });
+  // Start animation loop
+  // NOTE: Because we use transform translate, we keep left/top as a "base"
+  // and move within the box using translate.
+  animate();
 
   function yesClicked() {
     document.body.innerHTML = `
@@ -102,3 +183,4 @@
 </body>
 
 </html>
+
