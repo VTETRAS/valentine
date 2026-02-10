@@ -43,8 +43,8 @@
     #no {
       background-color: #adb5bd;
       position: absolute;
-      left: 220px;
-      top: 60px;
+      left: 0px;
+      top: 0px;
       will-change: transform;
     }
   </style>
@@ -133,8 +133,12 @@
     // If pointer is close, choose a target away from it
     if (pointer.x !== null && pointer.y !== null) {
       const d = distance(pos.x, pos.y, pointer.x, pointer.y);
-      if (d < dangerRadius) {
+      const now = Date.now();
+
+      // Only pick a new target occasionally (prevents "teleporty" jitter)
+      if (d < dangerRadius && (now - lastMoveTime) > moveCooldownMs) {
         pickNewTargetAwayFromPointer();
+        lastMoveTime = now;
       }
     }
 
@@ -183,4 +187,5 @@
 </body>
 
 </html>
+
 
